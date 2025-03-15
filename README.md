@@ -3,3 +3,5 @@ This repository analyzes party affiliation shifts between Republican and Democra
 
 
 [View the Google Sheets table](switch.html)
+
+[View the Google Sheets table](https://Borism1434.github.io/party-analysis/switch.html)
