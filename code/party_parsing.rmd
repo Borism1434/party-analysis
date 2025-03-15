@@ -1,0 +1,301 @@
+---
+title: "Party Analysis Parse"
+author: "Boris Martinez"
+date: "2024-04-07"
+output: html_document
+---
+
+# Load Library
+```{r, warning=FALSE}
+rm(list = ls())
+library(dplyr)
+library(readr)
+library(pointblank)
+library(ggforce)
+library(googlesheets4)
+library(stringr)
+library(magrittr)
+library(tidyr)
+library(janitor)
+library(ggplot2)
+library(purrr)
+library(lubridate)
+```
+
+# Load Data 
+```{r}
+dir <- "C:\\SVFL\\Party Data\\Party Analysis\\Party Analysis"
+setwd(dir)
+#load("2016_Gen_detail.RData")
+load("C:\\SVFL\\2024 EP Projects\\New Registration Analytics\\New-Registration-Analysis\\mar24_detail.RData")
+load("racecode.RData")
+```
+
+# Save Workspace 
+```{r}
+# save.image("Party Analysis.Rproj")
+load("Party Analysis.Rproj")
+```
+
+
+```{r}
+df <- vote_detail %>% 
+  select(county_code,
+         voter_id,
+         party_affiliation,
+         race,
+         birth_date,
+         registration_date,
+         voter_status,
+         precinct,
+         gender
+         ) %>%
+  mutate_all(str_trim) %>%
+  left_join(race_codes, by = c("race" = "race_code")) %>%
+  filter(voter_status == "ACT" ) 
+
+
+
+
+
+age_bin <-  df %>% 
+  mutate(birth_date_clean = mdy(birth_date),  # Convert birth_date to Date format
+         age = year(Sys.Date()) - year(birth_date_clean) - 
+           (month(Sys.Date()) < month(birth_date_clean) | 
+             (month(Sys.Date()) == month(birth_date_clean) & day(Sys.Date()) < day(birth_date_clean))),
+         
+           age_bin = cut(age, breaks = c(17, 24, 34, 49,  64, 130), labels = c("Age 18-24", "Age 25-34", "Age 35-49", "Age 50-64", "Age 65+")))
+  
+```
+
+
+```{r}
+
+age_bin$party_affiliation <- factor(age_bin$party_affiliation)
+
+party <- age_bin %>% 
+  mutate(party_affiliation = ifelse(party_affiliation == "DEM", "DEM", ifelse(party_affiliation == "REP", "REP", "IND")),
+         race_description = ifelse(race_description %in% c("Other", "Unknown", NA), "Other", race_description)
+  ) %>% 
+  group_by(race_description) %>% 
+  summarize(`Dem Reg` = sum(party_affiliation == "DEM", na.rm = TRUE),
+            `Rep Reg` = sum(party_affiliation == "REP", na.rm = TRUE),
+            `Ind Reg` = sum(party_affiliation == "IND", na.rm = TRUE), 
+            `Dem Advantage` = `Dem Reg` - `Rep Reg`)
+           
+ 
+# save(party, file = "Party2016.RData")
+# save(age_bin, file = "age_bin2016.RData")
+
+save(party, file = "Party2024.RData")
+save(age_bin, file = "age_bin2024.RData") 
+```
+
+
+
+
+# Voter File Drop 2024 - 2016
+
+# Load 2024 & 2016 Data
+```{r}
+load("Party2024.RData")
+load("age_bin2024.RData")
+
+age_bin_2024 <- age_bin
+party_2024   <- party
+
+
+load("Party2016.RData")
+load("age_bin2016.RData") 
+
+age_bin_2016 <- age_bin
+party_2016   <- party
+
+
+age_bin_2016$party_affiliation <- with(age_bin_2016, ifelse(party_affiliation == "REP", "REP",
+                                               ifelse(party_affiliation == "DEM", "DEM", "IND"))) 
+age_bin_2024$party_affiliation <- with(age_bin_2024, ifelse(party_affiliation == "REP", "REP",
+                                               ifelse(party_affiliation == "DEM", "DEM", "IND"))) 
+
+
+
+```
+
+
+```{r}
+dropped <- age_bin_2016 %>% 
+  anti_join(age_bin_2024, by = "voter_id")
+
+added <- age_bin_2024 %>% 
+  anti_join(age_bin_2016, by = "voter_id")
+
+
+party_dropped <- dropped %>% 
+  mutate(party_affiliation = ifelse(party_affiliation == "DEM", "DEM", ifelse(party_affiliation == "REP", "REP", "IND")),
+         race_description = ifelse(race_description %in% c("Other", "Unknown", NA), "Other", race_description)
+  ) %>% 
+  group_by(race_description) %>% 
+  summarize(`Dem Reg` = sum(party_affiliation == "DEM", na.rm = TRUE),
+            `Rep Reg` = sum(party_affiliation == "REP", na.rm = TRUE),
+            `Ind Reg` = sum(party_affiliation == "IND", na.rm = TRUE), 
+            `Dem Advantage` = `Dem Reg` - `Rep Reg`)
+
+
+
+
+party_added <- added %>% 
+  mutate(party_affiliation = ifelse(party_affiliation == "DEM", "DEM", ifelse(party_affiliation == "REP", "REP", "IND")),
+         race_description = ifelse(race_description %in% c("Other", "Unknown", NA), "Other", race_description)
+  ) %>% 
+  group_by(race_description) %>% 
+  summarize(`Dem Reg` = sum(party_affiliation == "DEM", na.rm = TRUE),
+            `Rep Reg` = sum(party_affiliation == "REP", na.rm = TRUE),
+            `Ind Reg` = sum(party_affiliation == "IND", na.rm = TRUE), 
+            `Dem Advantage` = `Dem Reg` - `Rep Reg`)
+
+
+```
+
+
+
+```{r}
+age_bin_2016$election <- 1
+age_bin_2024$election <- 2
+
+party_switch <- inner_join(age_bin_2016, age_bin_2024, by = "voter_id")
+
+party_switch_filterd <- party_switch %>%
+  filter(as.character(party_affiliation.x) != as.character(party_affiliation.y))
+
+# For Migration analysis to see folks that moved counties
+party_switch_filterd_cty <- party_switch_filterd %>%
+  filter(county_code.x != county_code.y)
+
+
+cty_switch <- party_switch_filterd %>% 
+  group_by(county_code.y) %>% 
+  summarise(
+    `Dem -> Rep` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "REP" , 1,0)),
+    `Dem -> Ind` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "IND" , 1,0)), 
+    `Rep -> Dem` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "DEM" , 1,0)),
+    `Rep -> Ind` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "IND" , 1,0)),
+    `Ind -> Dem` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "DEM" , 1,0)),
+    `Ind -> Rep` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "REP" , 1,0)),
+  
+  )
+
+
+
+
+switch_summary <- party_switch_filterd %>% 
+  group_by(race_description.y) %>% 
+  summarise(
+    `Dem -> Rep` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "REP" , 1,0)),
+    `Dem -> Ind` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "IND" , 1,0)), 
+    `Rep -> Dem` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "DEM" , 1,0)),
+    `Rep -> Ind` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "IND" , 1,0)),
+    `Ind -> Dem` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "DEM" , 1,0)),
+    `Ind -> Rep` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "REP" , 1,0)),
+  
+  )
+
+
+switched_df <- party_switch_filterd %>%
+  group_by(race_description.y) %>%
+  mutate(
+    `Dem_Rep` = ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "REP", 1, 0),
+    `Dem_Ind` = ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "IND", 1, 0),
+    `Rep_Dem` = ifelse(party_affiliation.x == "REP" & party_affiliation.y == "DEM", 1, 0),
+    `Rep_Ind` = ifelse(party_affiliation.x == "REP" & party_affiliation.y == "IND", 1, 0),
+    `Ind_Dem` = ifelse(party_affiliation.x == "IND" & party_affiliation.y == "DEM", 1, 0),
+    `Ind_Rep` = ifelse(party_affiliation.x == "IND" & party_affiliation.y == "REP", 1, 0)
+  )
+  
+
+table(switched_df$age_bin.y, switched_df$`Dem -> Rep`)
+
+age_party_switch <- switched_df %>% 
+  group_by(age_bin.y)
+
+
+
+
+
+
+
+switch_summary_age <- party_switch_filterd %>% 
+  group_by(age_bin.y) %>% 
+  summarise(
+    `Dem -> Rep` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "REP" , 1,0)),
+    `Dem -> Ind` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "IND" , 1,0)), 
+    `Rep -> Dem` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "DEM" , 1,0)),
+    `Rep -> Ind` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "IND" , 1,0)),
+    `Ind -> Dem` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "DEM" , 1,0)),
+    `Ind -> Rep` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "REP" , 1,0)),
+  ) %>% adorn_totals("row") %>% adorn_totals("col")
+
+
+switch_summary_race <- party_switch_filterd %>% 
+  group_by(race_description.y) %>% 
+  summarise(
+    `Dem -> Rep` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "REP" , 1,0)),
+    `Dem -> Ind` = sum(ifelse(party_affiliation.x == "DEM" & party_affiliation.y == "IND" , 1,0)), 
+    `Rep -> Dem` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "DEM" , 1,0)),
+    `Rep -> Ind` = sum(ifelse(party_affiliation.x == "REP" & party_affiliation.y == "IND" , 1,0)),
+    `Ind -> Dem` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "DEM" , 1,0)),
+    `Ind -> Rep` = sum(ifelse(party_affiliation.x == "IND" & party_affiliation.y == "REP" , 1,0)),
+  ) %>% adorn_totals("row") %>% adorn_totals("col")
+```
+
+
+
+```{r}
+
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a2",
+  data = party
+)
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a13",
+  data = party_2024
+)
+
+
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a44",
+  data = party_added
+)
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a22",
+  data = party_dropped
+)
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a32",
+  data = switch_summary_race
+)
+
+
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a44",
+  data = switch_summary_age
+)
+
+
+range_write(
+  ss = "https://docs.google.com/spreadsheets/d/1nVqURQFggShmocGghdA0Iiom_GC7dBhBHbvLRcjoHDA/edit#gid=822948256",
+  range = "Sheet1!a83",
+  data = cty_switch
+)
+```
