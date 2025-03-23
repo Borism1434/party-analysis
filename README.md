@@ -42,7 +42,34 @@ This report analyzes **voter registration trends in Florida (2016)**, breaking d
 ## **Understanding the 2016 Democratic Registration Edge**
 
 ## **2016 Voter Registration**
-- Democratic registration advantage in 2016 relied heavily on Black voters, who made up 1,054,054 more Democrats than Hispanics, despite there being 302,144 more registered Hispanic voters overall. A closer look reveals that 650,825 Hispanic voters were registered as Independent, making up nearly the entire nonwhite Independent bloc. This positions Hispanic voters as a significant swing group with potential to reshape electoral outcomes.
+- Democratic registration advantage in 2016 relied heavily on Black voters, who made up 1,054,054 more Democrats than Hispanics, despite there being 302,144 more registered Hispanic voters overall. A closer look reveals that 650,825 Hispanic voters were registered as Independent, making up nearly the entire nonwhite Independent bloc. This positions Hispanic voters as a significant swing group with the potential to reshape electoral outcomes.
 - The Republican Party’s largest and most reliable voter bloc in 2016 was White (Not Hispanic) voters, where they held a commanding registration advantage of 1,409,687 over Democrats—the only racial group where Democrats trailed significantly. While Democrats faced erosion among Hispanic voters, with 39.5% registering as Independents and only 35% as Democrats, Republicans maintained a stronghold among White voters, who registered 45.9% Republican compared to 28.9% Democrat and 26.7% Independent.
+
+## **2024 Voter Registration**
+
+- Despite an overall increase of 538,750 registered voters in Florida by early 2024, the Democratic Party experienced significant losses in affiliation across all major racial groups. Notably, there were 142,597 fewer Black voters registered as Democrats and 229,237 fewer Hispanic voters affiliated with the party compared to 2016. Native American voters shifted toward the Republican Party, resulting in a net Republican advantage of 3,579. While the decline in Democratic affiliation was observed across all racial categories, it was least pronounced among Black voters and most severe among Hispanic voters, signaling a substantial reshaping of Florida’s political landscape along racial lines.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
