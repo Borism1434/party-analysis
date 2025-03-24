@@ -2,7 +2,7 @@
 This repository analyzes party affiliation shifts between Republican and Democrat voters in Florida using multiple snapshots of the voter file. Comparing voter registration changes over time identifies trends in partisan shifts and their potential impact on elections.
 
 
-[View the Google Sheets table](https://Borism1434.github.io/party-analysis/Toplines.html)
+[View the Google Sheets table](https://Borism1434.github.io/party-analysis/Topline.html)
 
 
 
