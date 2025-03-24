@@ -100,7 +100,7 @@ Party switch data reveals that Hispanic voters had the sharpest realignment, wit
 This analysis provides a data-driven view of how party affiliation has shifted across race and age groups in Florida between 2016 and early 2024. The findings show meaningful realignments, especially among Hispanic and mid-life voters, alongside weakening Democratic affiliation across multiple racial groups. These shifts, though nuanced, may have long-term implications for party strategy, voter outreach, and electoral outcomes in a state already under firm Republican control.
 
 Further analysis could incorporate county-level trends, turnout comparisons, or historical context to better understand what drives voter reaffiliation in Florida—and how these dynamics might shape elections in 2024 and beyond.
-=======
+
 # party-analysis
 This repository analyzes party affiliation shifts between Republican and Democrat voters in Florida using multiple snapshots of the voter file. By comparing voter registration changes over time, it identifies trends in partisan shifts and their potential impact on elections.
 
